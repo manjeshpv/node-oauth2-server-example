@@ -55,11 +55,11 @@ module.exports = function AuthCodeModel(sequelize, DataTypes) {
         //});
 
         AuthCode.belongsTo(models.App, {
-          foreignKey: 'appId',
+          foreignKey: 'app_id',
         });
 
         AuthCode.belongsTo(models.User, {
-          foreignKey: 'userId',
+          foreignKey: 'user_id',
         });
       },
     },

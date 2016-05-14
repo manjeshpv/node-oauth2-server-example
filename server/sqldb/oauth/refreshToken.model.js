@@ -55,11 +55,11 @@ module.exports = function RefreshTokenModel(sequelize, DataTypes) {
         //});
 
         RefreshToken.belongsTo(models.App, {
-          foreignKey: 'appId',
+          foreignKey: 'app_id',
         });
 
         RefreshToken.belongsTo(models.User, {
-          foreignKey: 'userId',
+          foreignKey: 'user_id',
         });
       },
     },
