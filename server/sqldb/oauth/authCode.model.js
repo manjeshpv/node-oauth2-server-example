@@ -35,6 +35,7 @@ module.exports = function AuthCodeModel(sequelize, DataTypes) {
       defaultValue: true,
       allowNull: false,
     },
+    scope: DataTypes.STRING
   }, {
     tableName: 'auth_codes',
     timestamps: false,

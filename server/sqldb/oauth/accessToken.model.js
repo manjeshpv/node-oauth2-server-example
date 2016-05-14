@@ -38,6 +38,7 @@ module.exports = function AccessTokenModel(sequelize, DataTypes) {
       defaultValue: true,
       allowNull: false,
     },
+    scope: DataTypes.STRING
   }, {
     tableName: 'access_tokens',
     timestamps: false,

@@ -93,8 +93,9 @@ export default function(app) {
     });
     var response = new Response(res);
 
-    oauth.authenticate(request,response,{scope:"foo"})
+    oauth.authenticate(request,response,{scope:"consultant"})
       .then(function(data) {
+        console.log("s")
         // Request is authorized.
         next()
 

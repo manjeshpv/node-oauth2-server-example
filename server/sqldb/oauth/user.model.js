@@ -121,6 +121,7 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
+    scope: DataTypes.STRING
   }, {
     tableName: 'users',
     timestamps: false,

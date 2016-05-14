@@ -35,6 +35,7 @@ module.exports = function RefreshTokenModel(sequelize, DataTypes) {
       defaultValue: true,
       allowNull: false,
     },
+    scope: DataTypes.STRING
   }, {
     tableName: 'refresh_tokens',
     timestamps: false,

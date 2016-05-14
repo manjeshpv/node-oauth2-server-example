@@ -35,15 +35,15 @@ const getAccessToken = (bearerToken) => {
         {
           model: User,
           attributes: ['id', 'name', 'client_id', 'group_id', 'email_id'],
-        },
+        },App
       ],
     })
     .then(accessToken => {
       if (!accessToken) return false;
       const token = accessToken.toJSON();
       token.user = token.User;
-      // Todo: token.scope and token.client
-
+      token.client = token.App;
+      token.scope = 'consultant'
       return  token;
     })
     .catch(err => console.log("getAccessToken - Err: "));
@@ -234,13 +234,15 @@ function saveToken(token, client, user) {
       expires: token.accessTokenExpiresAt,
       app_id: client.id,
       user_id: user.id,
+      scope: token.scope
     }),
-    RefreshToken.create({
+      token.refreshToken? RefreshToken.create({ // no refresh token for client_credentials
       refresh_token: token.refreshToken,
       expires: token.refreshTokenExpiresAt,
       app_id: client.id,
       user_id: user.id,
-    }),
+      scope: token.scope
+    }):[],
 
   ])
     .then(resultsArray => _.assign(  // expected to return client and user, but not returning
@@ -275,11 +277,11 @@ function getAuthorizationCode(code) {
   console.log("getAuthCode",code)
   return AuthCode
     .findOne({
-      attributes: [['app_id', 'client_id'], 'expires', ['user_id', 'user_id']],
+      attributes: [['app_id', 'client_id'], 'expires', ['user_id', 'user_id'],'scope'],
       where: { auth_code: code},
       include: [User,App]
     })
-    .then(function verifyAuthCode(authCodeModel) {
+    .then(authCodeModel => {
       if (!authCodeModel) return false;
       console.log("get auth code return ", authCodeModel.toJSON())
       const client = authCodeModel.App.toJSON()
@@ -289,7 +291,8 @@ function getAuthorizationCode(code) {
         client,
         expiresAt: authCodeModel.expires,
         redirectUri: client.redirect_uri,
-        user
+        user,
+        scope: authCodeModel.scope,
       };
     })
     .catch(err => console.log("getAuthorizationCode",err));
@@ -298,11 +301,13 @@ function getAuthorizationCode(code) {
 function saveAuthorizationCode(code, client,  user) {
   console.log("saveAuthorizationCode",code, !!client,  !!user)
   return AuthCode
-    .build({ expires: code.expiresAt })
-    .set('app_id', client.id)
-    .set('auth_code', code.authorizationCode)
-    .set('user_id', user.id)
-    .save()
+    .create({
+      expires: code.expiresAt,
+      app_id: client.id,
+      auth_code: code.authorizationCode,
+      user_id: user.id,
+      scope: code.scope
+    })
     .then(() => {
       console.log("authCode.authorizationCode",code.authorizationCode)
       code.code = code.authorizationCode
@@ -312,6 +317,11 @@ function saveAuthorizationCode(code, client,  user) {
       return console.log("saveAuthorizationCode: Err: ",err)
     });
 }
+/**
+ *
+ * @param {Client} client returned from getClient()
+ * @returns {*}
+ */
 
 function getUserFromClient(client) {
   console.log("getUserFromClient(client)",client)
@@ -325,8 +335,8 @@ function getUserFromClient(client) {
   return App
     .findOne(options)
     .then(client => {
-      if (!client) return null;
-      if (!client.User) return null;
+      if (!client) return false;
+      if (!client.User) return false;
       console.log(client.User.toJSON())
       return client.User.toJSON();
     }).catch(err => console.log('getUserFromClient', err))
@@ -368,7 +378,8 @@ const getRefreshToken = (refreshToken) => {
           client: savedRT ? savedRT.App.toJSON() : {},
           refreshTokenExpiresAt: savedRT ? new Date(savedRT.expires) : null,
           refreshToken,
-          refresh_token: refreshToken
+          refresh_token: refreshToken,
+          scope: 'consultant'
         };
       console.log("tokenTemp",tokenTemp)
         return tokenTemp;
@@ -377,7 +388,15 @@ const getRefreshToken = (refreshToken) => {
 
 const validateScope = (token, scope) => {
   console.log("validateScope", token, scope)
-  return 1
+  //if(!scope) return false
+  //let scopes
+  //if(scope instanceof Array){
+  //  scopes = scope;
+  //} else if (typeof scope === 'string' && scope.split(',').length) {
+  //  scopes = scope.split(',')
+  //}
+
+  return token.scope === scope
 }
 
 
@@ -386,13 +405,11 @@ module.exports = {
   //generateAuthorizationCode, optional
   //generateRefreshToken, - optional
   getAccessToken,
-  //getAuthCode,
+  getAuthorizationCode, //getAuthCode renamed to,
   getClient,
   getRefreshToken,
   getUser,
   getUserFromClient,
-  getAuthorizationCode,
-
   //grantTypeAllowed, Removed in oauth2-server 3.0
   revokeAuthorizationCode,
   revokeToken,
